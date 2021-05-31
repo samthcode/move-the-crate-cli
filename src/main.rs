@@ -1,3 +1,18 @@
+mod game;
+
 fn main() {
-    println!("Hello, world!");
+    let mut game = match game::Game::new() {
+        Ok(game) => game,
+        Err(err) => {
+            println!("{}", err);
+            return
+        }
+    };
+    match game.play() {
+        Ok(_) => (),
+        Err(err) => {
+            println!("{}", err);
+            return
+        }
+    };
 }
