@@ -29,6 +29,9 @@ impl Game {
         ret.advance_level();
         ret.populate_board()?;
 
+        println!();
+        println!("~~ Level {} ~~", ret.level);
+
         // Returning the setup Game struct
         Ok(ret)
     }
@@ -113,9 +116,19 @@ impl Game {
     }
 
     fn level_complete(&mut self) -> Result<(), String> {
+        println!();
+        println!("Congratulations! you passed level {}!", self.level);
+
         self.advance_level();
         self.populate_board()?;
-        println!("{}", self.board.level_str);
+        // println!("{}", self.board.level_str);
+
+        if !self.finished {
+            println!("Advancing to level {}.", self.level);
+            println!();
+            println!("~~ Level {} ~~", self.level);
+        }
+
         Ok(())
     }
 
@@ -280,7 +293,8 @@ impl Game {
 
     fn print_board(&self) {
         println!();
-        println!("Board:");
+        println!("~~ Board ~~");
+        println!();
         println!("{}", self.board.level_str);
         println!();
     }
