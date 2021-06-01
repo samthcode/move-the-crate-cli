@@ -115,6 +115,7 @@ impl Game {
     fn level_complete(&mut self) -> Result<(), String> {
         self.advance_level();
         self.populate_board()?;
+        println!("{}", self.board.level_str);
         Ok(())
     }
 
@@ -132,7 +133,7 @@ impl Game {
                             self.wrap_player_north();
                         },
                         CellType::Crate => {
-                            if self.move_crate(dir) {
+                            if self.move_crate(Direction::North)? {
                                 self.wrap_player_north();
                             }
                         },
@@ -150,7 +151,7 @@ impl Game {
                         },
                         CellType::Crate => {
                             // println!("ello");
-                            if self.move_crate(Direction::North) {
+                            if self.move_crate(Direction::North)? {
                                 // println!("we can move the crate!");
                                 self.move_player_north();
                             } else {
@@ -200,7 +201,7 @@ impl Game {
         self.player.y = final_row_ind;
     }
 
-    fn move_crate(&mut self, direction: Direction) -> bool {
+    fn move_crate(&mut self, direction: Direction) -> Result<bool, String> {
         // at the moment, crates cannot be wrapped
 
         // println!("crate: {}:{}", self.board.crate_location.x, self.board.crate_location.y);
@@ -209,7 +210,7 @@ impl Game {
 
         let destination = match direction {
             Direction::North => {
-                if self.board.crate_location.y == 0 { return false }
+                if self.board.crate_location.y == 0 { return Ok(false) }
 
                 // println!("ello");
 
@@ -220,21 +221,21 @@ impl Game {
                 &mut self.board.cells[dest_pos.y][dest_pos.x]
             },
             Direction::South => {
-                if self.board.crate_location.y == self.board.cells.len()-1 { return false }
+                if self.board.crate_location.y == self.board.cells.len()-1 { return Ok(false) }
 
                 dest_pos = Pos::from(self.board.crate_location.x, self.board.crate_location.y+1);
 
                 &mut self.board.cells[dest_pos.y][dest_pos.x]
             },
             Direction::East => {
-                if self.board.crate_location.x == self.board.cells.len()-1 { return false }
+                if self.board.crate_location.x == self.board.cells.len()-1 { return Ok(false) }
 
                 dest_pos = Pos::from(self.board.crate_location.x+1, self.board.crate_location.y);
 
                 &mut self.board.cells[dest_pos.y][dest_pos.x]
             },
             Direction::West => {
-                if self.board.crate_location.x == 0 { return false }
+                if self.board.crate_location.x == 0 { return Ok(false) }
 
                 dest_pos = Pos::from(self.board.crate_location.x-1, self.board.crate_location.y);
 
@@ -247,8 +248,8 @@ impl Game {
         let should_move = match destination.cell_type {
             CellType::Wall => false,
             CellType::Goal => {
-                self.advance_level();
-                return true
+                self.level_complete()?;
+                return Ok(true)
             },
             _ => true
         };
@@ -263,7 +264,7 @@ impl Game {
 
         // self.update_level_string();
 
-        should_move
+        Ok(should_move)
     }
 
     fn update_level_string(&mut self) {
