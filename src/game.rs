@@ -40,13 +40,14 @@ impl Game {
     pub fn play(&mut self) {
         loop {
             if self.finished {
+                println!();
                 println!("Congratulations! You've won!");
                 break;
             }
 
             self.print_board();
             println!("Type \'quit\' to quit the game.");
-            print!("Where do you want to go? (n, e, s, w): ");
+            print!("Where do you want to go? (w, s, a, d): ");
             std::io::stdout().flush().unwrap(); // necessary for print! for whatever reason
 
             // user input for where they want to go
@@ -137,7 +138,45 @@ impl Game {
                     )
                 }
             },
-            _ => todo!()
+            Direction::South => {
+                if obj_pos.y == self.board.cells.len()-1 {
+                    Pos::from(
+                        obj_pos.x,
+                        0
+                    )
+                } else {
+                    Pos::from(
+                        obj_pos.x,
+                        obj_pos.y+1
+                    )
+                }
+            },
+            Direction::East => {
+                if obj_pos.x == self.board.cells[obj_pos.y].len()-1 {
+                    Pos::from(
+                        0,
+                        obj_pos.y
+                    )
+                } else {
+                    Pos::from(
+                        obj_pos.x+1,
+                        obj_pos.y
+                    )
+                }
+            }
+            Direction::West => {
+                if obj_pos.x == 0 {
+                    Pos::from(
+                        self.board.cells[obj_pos.y].len()-1,
+                        obj_pos.y
+                    )
+                } else {
+                    Pos::from(
+                        obj_pos.x-1,
+                        obj_pos.y
+                    )
+                }
+            }
         };
         
         // if the destination is a crate, try and move it; if its a goal or floor, go on it, and if it’s a wall, dont move
@@ -227,6 +266,15 @@ impl Game {
         println!();
         println!("{}", self.board.level_str);
         println!();
+
+        // for vec in &self.board.cells {
+        //     for cell in vec {
+        //         print!("{}, ", cell.cell_type.char());
+        //         std::io::stdout().flush().unwrap();
+        //     }
+        //     println!();
+        // }
+        // println!();
     }
 
     fn advance_level_string(&mut self) {
@@ -347,10 +395,10 @@ enum Direction {
 impl Direction {
     fn char(&self) -> char {
         match self {
-            &Direction::North => 'n',
-            &Direction::East => 'e',
+            &Direction::North => 'w',
+            &Direction::East => 'd',
             &Direction::South => 's',
-            &Direction::West => 'w',
+            &Direction::West => 'a',
         }
     }
 }
