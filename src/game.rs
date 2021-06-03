@@ -270,7 +270,7 @@ impl Game {
             let mut tmp = String::new();
             tmp.push('|');
             for cell in vec {
-                tmp.push(cell.cell_type.char());
+                tmp.push(cell.cell_type.display_char());
             }
             tmp.push('|');
 
@@ -388,6 +388,16 @@ pub enum CellType {
 
 impl CellType {
     fn char(&self) -> char {
+        match self {
+            &CellType::Wall => '#',
+            &CellType::Floor => ' ',
+            &CellType::Crate => 'C',
+            &CellType::Player => 'P',
+            &CellType::Goal => 'G',
+        }
+    }
+
+    fn display_char(&self) -> char { // TODO: Find some unicode characters to use for these
         match self {
             &CellType::Wall => '#',
             &CellType::Floor => ' ',
