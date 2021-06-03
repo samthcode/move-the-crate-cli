@@ -1,5 +1,5 @@
 [package]
-name = "top-down-dungeon-cl"
+name = "move-the-crate"
 version = "0.1.0"
 authors = ["Sam Thomas"]
 edition = "2018"
