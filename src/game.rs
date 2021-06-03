@@ -4,43 +4,44 @@ pub struct Game {
     board: Board,
     level: usize,
     player: Player,
-    finished: bool
+    finished: bool,
+    level_completed: bool
 }
 
 impl Game {
-    pub fn new() -> Result<Self, String> {
+    pub fn new() -> Self {
         let mut ret = Self {
             board: Board {
                 cells: Vec::new(),
                 level_str: String::new(),
-                goal_location: Pos::from(0, 0),
-                crate_location: Pos::from(0, 0)
+                goal_pos: Pos::from(0, 0),
+                crate_pos: Pos::from(0, 0),
             },
             level: 0,
             player: Player {
-                x: 1,
-                y: 1,
-                score: 0
+                pos: Pos::from(1, 1),
+                score: 0,
             },
-            finished: false
+            finished: false,
+            level_completed: false
         };
 
         // Addition setup
-        ret.advance_level();
-        ret.populate_board()?;
+        ret.advance_level_string();
+        ret.populate_board();
 
         println!();
         println!("~~ Level {} ~~", ret.level);
 
         // Returning the setup Game struct
-        Ok(ret)
+        ret
     }
 
-    pub fn play(&mut self) -> Result<(), String> {
+    pub fn play(&mut self) {
         loop {
             if self.finished {
                 println!("Congratulations! You've won!");
-                break
+                break;
             }
 
             self.print_board();
@@ -52,7 +53,7 @@ impl Game {
             let mut direction = String::new();
             match std::io::stdin().read_line(&mut direction) {
                 Ok(_) => (),
-                Err(_) => return Err(String::from("Unable to receive user input."))
+                Err(_) => panic!("Unable to receive user input."),
             };
 
             let direction = direction.trim();
@@ -86,16 +87,16 @@ impl Game {
             match direction {
                 _ if direction == Direction::North.char() => {
                     dir = Some(Direction::North);
-                },
+                }
                 _ if direction == Direction::East.char() => {
                     dir = Some(Direction::East);
-                },
+                }
                 _ if direction == Direction::South.char() => {
                     dir = Some(Direction::South);
-                },
+                }
                 _ if direction == Direction::West.char() => {
                     dir = Some(Direction::West);
-                },
+                }
                 _ => {
                     println!();
                     println!("Please enter a valid direction.");
@@ -103,24 +104,103 @@ impl Game {
                 }
             }
 
-            self.move_player(
-            if let None = dir {
-                    return Err(String::from("Direction \'dir\' nor correctly assigned"))
+            self.move_object(
+                CellType::Player,
+                if let None = dir {
+                    panic!("Direction \'dir\' nor correctly assigned")
                 } else {
                     dir.unwrap()
-                }
-            )?;
+                },
+            );
+            self.update_level_string();
         }
-
-        Ok(())
     }
 
-    fn level_complete(&mut self) -> Result<(), String> {
+    fn move_object(&mut self, obj: CellType, dir: Direction) -> bool {
+        let obj_pos = match &obj {
+            &CellType::Player => self.player.pos,
+            &CellType::Crate => self.board.crate_pos,
+            _ => panic!("Attempt to call move_object() with invalid type") // format with obj when Debug implemented for CellType
+        };
+
+        let destination: Pos = match dir {
+            Direction::North => { 
+                if obj_pos.y == 0 {
+                    Pos::from(
+                        obj_pos.x,
+                        self.board.cells.len()-1,
+                    )
+                } else {
+                    Pos::from(
+                        obj_pos.x,
+                        obj_pos.y-1
+                    )
+                }
+            },
+            _ => todo!()
+        };
+        
+        // if the destination is a crate, try and move it; if its a goal or floor, go on it, and if it’s a wall, dont move
+        // self.update_pos_of(&obj, &destination);
+        let can_move = match self.cell_at_pos(&destination).cell_type {
+            CellType::Crate => {
+                let res = self.move_object(CellType::Crate, dir);
+                if self.level_completed {
+                    self.level_completed = false;
+                    return true // the return value doesn't matter here
+                }
+                res
+            },
+            CellType::Wall => false,
+            CellType::Goal => {
+                //* Win condition here
+                if &obj == &CellType::Crate {
+                    self.level_complete();
+                    self.level_completed = true;
+                    return true
+                }
+                true
+            }
+            _ => true
+        };
+
+        if can_move {
+            self.cell_at_pos_mut(&destination).cell_type = obj.clone();
+            self.cell_at_pos_mut(&obj_pos).cell_type = if obj_pos == self.board.goal_pos {
+                CellType::Goal
+            } else {
+                CellType::Floor
+            };
+
+            self.update_object_pos(&obj, &destination);
+        }
+
+
+        can_move
+    }
+
+    fn update_object_pos(&mut self, obj: &CellType, new: &Pos) {
+        match obj {
+            CellType::Player => self.player.pos = *new,
+            CellType::Crate => self.board.crate_pos = *new,
+            _ => panic!("Attempt to call update_object_pos() on unsupported CellType")
+        }
+    }
+
+    fn cell_at_pos(&self, pos: &Pos) -> &Cell {
+        &self.board.cells[pos.y][pos.x]
+    }
+
+    fn cell_at_pos_mut(&mut self, pos: &Pos) -> &mut Cell {
+        &mut self.board.cells[pos.y][pos.x]
+    }
+
+    fn level_complete(&mut self) {
         println!();
         println!("Congratulations! you passed level {}!", self.level);
 
-        self.advance_level();
-        self.populate_board()?;
+        self.advance_level_string();
+        self.populate_board();
         // println!("{}", self.board.level_str);
 
         if !self.finished {
@@ -128,156 +208,6 @@ impl Game {
             println!();
             println!("~~ Level {} ~~", self.level);
         }
-
-        Ok(())
-    }
-
-    fn move_player(&mut self, dir: Direction) -> Result<(), String> {
-        // println!("player position \'{}:{}\'", self.player.x, self.player.y);
-        match dir {
-            Direction::North => {
-                // if the player is at the edge, try to wrap them to the top
-                if self.player.y == 0 {
-                    
-                    let final_row_ind = self.board.cells.len()-1;
-                    
-                    match self.board.cells[final_row_ind][self.player.x].cell_type {
-                        CellType::Floor => {
-                            self.wrap_player_north();
-                        },
-                        CellType::Crate => {
-                            if self.move_crate(Direction::North)? {
-                                self.wrap_player_north();
-                            }
-                        },
-                        CellType::Goal => {
-                            self.wrap_player_north();
-                        },
-                        _ => ()
-                    }
-                } else {        
-                    // println!("Hello");
-                    
-                    match self.board.cells[self.player.y-1][self.player.x].cell_type {
-                        CellType::Floor => {
-                            self.move_player_north();
-                        },
-                        CellType::Crate => {
-                            // println!("ello");
-                            if self.move_crate(Direction::North)? {
-                                // println!("we can move the crate!");
-                                self.move_player_north();
-                            } else {
-                                // println!("we cannot move the crate silly");
-                            }
-                        },
-                        CellType::Goal => {
-                            self.move_player_north();
-                        },
-                        _ => ()
-                    }
-                }
-            },
-            Direction::South => (),
-            Direction::East => (),
-            Direction::West => ()
-        }
-        
-        // this allows the player to cross over the goal without causing issues
-        let player_pos = (self.player.x, self.player.y);
-        let goal_location = self.board.goal_location.clone();
-        if player_pos.0 != goal_location.x || player_pos.1 != goal_location.y {
-            self.board.cells[goal_location.y][goal_location.x].cell_type = CellType::Goal;
-        }
-
-        self.update_level_string();
-
-        Ok(())
-    }
-
-    fn move_player_north(&mut self) {
-        let mut destination = &mut self.board.cells[self.player.y-1][self.player.x];
-
-        destination.cell_type = CellType::Player;
-        self.board.cells[self.player.y][self.player.x].cell_type = CellType::Floor;
-        self.player.y -= 1;
-
-        // self.update_level_string()
-    }
-
-    fn wrap_player_north(&mut self) {
-        let final_row_ind = self.board.cells.len()-1;
-        let mut destination_cell = &mut self.board.cells[final_row_ind][self.player.x];
-
-        destination_cell.cell_type = CellType::Player;
-        self.board.cells[self.player.y][self.player.x].cell_type = CellType::Floor;
-        self.player.y = final_row_ind;
-    }
-
-    fn move_crate(&mut self, direction: Direction) -> Result<bool, String> {
-        // at the moment, crates cannot be wrapped
-
-        // println!("crate: {}:{}", self.board.crate_location.x, self.board.crate_location.y);
-
-        let mut dest_pos = Pos::from(0, 0);
-
-        let destination = match direction {
-            Direction::North => {
-                if self.board.crate_location.y == 0 { return Ok(false) }
-
-                // println!("ello");
-
-                dest_pos = Pos::from(self.board.crate_location.x, self.board.crate_location.y-1);
-
-                // println!("ello");
-
-                &mut self.board.cells[dest_pos.y][dest_pos.x]
-            },
-            Direction::South => {
-                if self.board.crate_location.y == self.board.cells.len()-1 { return Ok(false) }
-
-                dest_pos = Pos::from(self.board.crate_location.x, self.board.crate_location.y+1);
-
-                &mut self.board.cells[dest_pos.y][dest_pos.x]
-            },
-            Direction::East => {
-                if self.board.crate_location.x == self.board.cells.len()-1 { return Ok(false) }
-
-                dest_pos = Pos::from(self.board.crate_location.x+1, self.board.crate_location.y);
-
-                &mut self.board.cells[dest_pos.y][dest_pos.x]
-            },
-            Direction::West => {
-                if self.board.crate_location.x == 0 { return Ok(false) }
-
-                dest_pos = Pos::from(self.board.crate_location.x-1, self.board.crate_location.y);
-
-                &mut self.board.cells[dest_pos.y][dest_pos.x]
-            }
-        };
-
-        // println!("destination: {:?}", destination.cell_type);
-        
-        let should_move = match destination.cell_type {
-            CellType::Wall => false,
-            CellType::Goal => {
-                self.level_complete()?;
-                return Ok(true)
-            },
-            _ => true
-        };
-
-        if should_move {
-            destination.cell_type = CellType::Crate;
-            self.board.cells[self.board.crate_location.y][self.board.crate_location.x].cell_type = CellType::Floor;
-            self.board.crate_location = dest_pos;
-        }
-
-        // println!("crate location {}:{}", self.board.crate_location.x, self.board.crate_location.y);
-
-        // self.update_level_string();
-
-        Ok(should_move)
     }
 
     fn update_level_string(&mut self) {
@@ -299,7 +229,7 @@ impl Game {
         println!();
     }
 
-    fn advance_level(&mut self) {
+    fn advance_level_string(&mut self) {
         self.level += 1;
         self.board.level_str = match std::fs::read_to_string(format!("levels/{}.txt", self.level)) {
             Ok(string) => string,
@@ -311,7 +241,7 @@ impl Game {
         };
     }
 
-    fn populate_board(&mut self) -> Result<(), String> {
+    fn populate_board(&mut self) {
         // Reset the cells
         self.board.cells = Vec::new();
 
@@ -323,52 +253,56 @@ impl Game {
                     _ if col == CellType::Floor.char() => row_vec.push(Cell::new(CellType::Floor)),
                     _ if col == CellType::Goal.char() => {
                         row_vec.push(Cell::new(CellType::Goal));
-                        self.board.goal_location = Pos::from(col_ind, row_ind)
-                    },
+                        self.board.goal_pos = Pos::from(col_ind, row_ind)
+                    }
                     _ if col == CellType::Player.char() => {
                         row_vec.push(Cell::new(CellType::Player));
-                        self.player.x = col_ind;
-                        self.player.y = row_ind;
-                        // println!("Player pos x:{} and y:{}", self.player.x, self.player.y);
-                    },
+                        self.player.pos = Pos::from(col_ind, row_ind);
+                    }
                     _ if col == CellType::Crate.char() => {
                         row_vec.push(Cell::new(CellType::Crate));
-                        self.board.crate_location = Pos::from(col_ind, row_ind);
-                    },
-                    _ => return Err(format!("Unsupported character \'{}\' in level {}.", col, self.level))
+                        self.board.crate_pos = Pos::from(col_ind, row_ind);
+                    }
+                    _ => {
+                        panic!(
+                            "Unsupported character \'{}\' in level {}.",
+                            col, self.level
+                        )
+                    }
                 }
             }
             self.board.cells.push(row_vec);
         }
-        Ok(())
     }
 }
 
 pub struct Player {
-    x: usize,
-    y: usize,
+    pos: Pos,
     score: isize,
 }
 
 pub struct Board {
     cells: Vec<Vec<Cell>>,
     level_str: String,
-    goal_location: Pos,
-    crate_location: Pos
+    goal_pos: Pos,
+    crate_pos: Pos,
 }
 
 #[derive(Clone, Copy)]
 pub struct Pos {
     x: usize,
-    y: usize
+    y: usize,
+}
+
+impl PartialEq for Pos {
+    fn eq(&self, other: &Pos) -> bool {
+        self.x == other.x && self.y == other.y
+    }
 }
 
 impl Pos {
     fn from(x: usize, y: usize) -> Self {
-        Self {
-            x,
-            y
-        }
+        Self { x, y }
     }
 }
 
@@ -378,19 +312,17 @@ pub struct Cell {
 
 impl Cell {
     fn new(cell_type: CellType) -> Self {
-        Self {
-            cell_type
-        }
+        Self { cell_type }
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub enum CellType {
     Wall,
     Floor,
     Crate,
     Player,
-    Goal
+    Goal,
 }
 
 impl CellType {
@@ -409,7 +341,7 @@ enum Direction {
     North,
     East,
     South,
-    West
+    West,
 }
 
 impl Direction {
@@ -418,7 +350,7 @@ impl Direction {
             &Direction::North => 'n',
             &Direction::East => 'e',
             &Direction::South => 's',
-            &Direction::West => 'w'
+            &Direction::West => 'w',
         }
     }
 }
