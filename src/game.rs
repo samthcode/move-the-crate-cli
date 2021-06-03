@@ -38,6 +38,13 @@ impl Game {
     }
 
     pub fn play(&mut self) {
+
+        // The beginning
+        println!("Welcome to move the crate, an awsome puzzle game.");
+        println!();
+        println!("Your objective is to move the crate so that it is over the goal!");
+        println!("You should input your directions in a row, and then see if you win!");
+
         loop {
             if self.finished {
                 println!();
@@ -47,7 +54,7 @@ impl Game {
 
             self.print_board();
             println!("Type \'quit\' to quit the game.");
-            print!("Where do you want to go? (w, s, a, d): ");
+            print!("What are your directions?: ");
             std::io::stdout().flush().unwrap(); // necessary for print! for whatever reason
 
             // user input for where they want to go
@@ -57,63 +64,68 @@ impl Game {
                 Err(_) => panic!("Unable to receive user input."),
             };
 
-            let direction = direction.trim();
+            let directions = direction.trim();
 
             // println!("direction: \'{}\'", direction);
 
             // If the user wants to stop
-            if direction == "quit" {
+            if directions == "quit" {
                 println!();
                 println!("Quitting...");
                 break;
             }
 
-            if direction.len() != 1 {
-                println!();
-                println!("Please enter a valid direction.");
-                continue;
+            let mut error = false;
+
+            for direction in directions.chars() {
+                let mut dir: Option<Direction> = None;
+    
+                match direction {
+                    _ if direction == Direction::North.char() => {
+                        dir = Some(Direction::North);
+                    }
+                    _ if direction == Direction::East.char() => {
+                        dir = Some(Direction::East);
+                    }
+                    _ if direction == Direction::South.char() => {
+                        dir = Some(Direction::South);
+                    }
+                    _ if direction == Direction::West.char() => {
+                        dir = Some(Direction::West);
+                    }
+                    _ => {
+                        println!();
+                        println!("Invalid direction \'{}\'.", direction);
+                        error = true;
+                    }
+                }
+                
+                if !error {
+                    self.move_object(
+                        CellType::Player,
+                        if let None = dir {
+                            panic!("Direction \'dir\' nor correctly assigned")
+                        } else {
+                            dir.unwrap()
+                        },
+                    );
+                }
             }
-
-            let direction = match direction.chars().nth(0) {
-                Some(val) => val,
-                None => {
-                    println!();
-                    println!("Please enter a valid direction.");
-                    continue;
-                }
-            };
-
-            let mut dir: Option<Direction> = None;
-
-            match direction {
-                _ if direction == Direction::North.char() => {
-                    dir = Some(Direction::North);
-                }
-                _ if direction == Direction::East.char() => {
-                    dir = Some(Direction::East);
-                }
-                _ if direction == Direction::South.char() => {
-                    dir = Some(Direction::South);
-                }
-                _ if direction == Direction::West.char() => {
-                    dir = Some(Direction::West);
-                }
-                _ => {
-                    println!();
-                    println!("Please enter a valid direction.");
-                    continue;
-                }
-            }
-
-            self.move_object(
-                CellType::Player,
-                if let None = dir {
-                    panic!("Direction \'dir\' nor correctly assigned")
-                } else {
-                    dir.unwrap()
-                },
-            );
+            
             self.update_level_string();
+
+            if self.level_completed {
+                self.level_complete();
+                self.level_completed = false;
+            } else {
+                println!();
+                println!("You didn't complete the level this time! Try again.");
+
+                self.level -= 1;
+                self.advance_level_string();
+                self.populate_board();
+            }
+
         }
     }
 
@@ -185,7 +197,6 @@ impl Game {
             CellType::Crate => {
                 let res = self.move_object(CellType::Crate, dir);
                 if self.level_completed {
-                    self.level_completed = false;
                     return true // the return value doesn't matter here
                 }
                 res
@@ -194,7 +205,6 @@ impl Game {
             CellType::Goal => {
                 //* Win condition here
                 if &obj == &CellType::Crate {
-                    self.level_complete();
                     self.level_completed = true;
                     return true
                 }
