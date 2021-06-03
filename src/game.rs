@@ -264,7 +264,20 @@ impl Game {
         println!();
         println!("~~ Board ~~");
         println!();
-        println!("{}", self.board.level_str);
+
+        println!("+{}+", "-".repeat(self.board.cells[0].len()));
+        for vec in &self.board.cells {
+            let mut tmp = String::new();
+            tmp.push('|');
+            for cell in vec {
+                tmp.push(cell.cell_type.char());
+            }
+            tmp.push('|');
+
+            println!("{}", tmp);
+        }
+        println!("+{}+", "-".repeat(self.board.cells.last().unwrap().len()));
+
         println!();
 
         // for vec in &self.board.cells {
