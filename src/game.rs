@@ -1,5 +1,5 @@
 use std::io::{self, Write};
-use std::{thread, time};
+use std::{thread, time, process::Command};
 
 pub struct Game {
     board: Board,
@@ -39,6 +39,8 @@ impl Game {
     }
 
     pub fn play(&mut self) {
+        let mut clear_command = Command::new("clear");
+
 
         // The beginning
         println!("Welcome to move the crate, an awsome puzzle game.");
@@ -144,6 +146,8 @@ impl Game {
                 self.populate_board();
             }
 
+            // * Clear the console
+            clear_command.status().expect("Failed to call clear command");
         }
 
         let mut buffer = String::new();
