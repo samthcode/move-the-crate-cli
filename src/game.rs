@@ -1,5 +1,6 @@
 use std::io::{self, Write};
 use std::{thread, time, process::Command};
+use colored::*;
 
 pub struct Game {
     board: Board,
@@ -147,7 +148,7 @@ impl Game {
             }
 
             // * Clear the console
-            clear_command.status().expect("Failed to call clear command");
+            // clear_command.status().expect("Failed to call clear command");
         }
 
         let mut buffer = String::new();
@@ -316,18 +317,18 @@ impl Game {
         // }
         // println!("+{}+", "-".repeat(self.board.cells.last().unwrap().len()));
 
-        println!("{}", self.board.level_str);
+        // println!("{}", self.board.level_str);
 
-        println!();
-
-        // for vec in &self.board.cells {
-        //     for cell in vec {
-        //         print!("{}, ", cell.cell_type.char());
-        //         std::io::stdout().flush().unwrap();
-        //     }
-        //     println!();
-        // }
         // println!();
+
+        for vec in &self.board.cells {
+            for cell in vec {
+                print!("{}", cell.cell_type.display_char());
+                std::io::stdout().flush().unwrap();
+            }
+            println!();
+        }
+        println!();
     }
 
     fn advance_level_string(&mut self) {
@@ -437,13 +438,13 @@ impl CellType {
         }
     }
 
-    fn display_char(&self) -> char { // TODO: Find some unicode characters to use for these
+    fn display_char(&self) -> ColoredString { // TODO: Find some unicode characters to use for these
         match self {
-            &CellType::Wall => '#',
-            &CellType::Floor => ' ',
-            &CellType::Crate => 'C',
-            &CellType::Player => 'P',
-            &CellType::Goal => 'G',
+            &CellType::Wall => "#".bold().black(),
+            &CellType::Floor => " ".bold(),
+            &CellType::Crate => "C".bright_yellow(),
+            &CellType::Player => "P".bright_green(),
+            &CellType::Goal => "G".bold().green(),
         }
     }
 }
