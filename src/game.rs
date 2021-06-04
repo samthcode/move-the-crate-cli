@@ -1,4 +1,5 @@
-use std::io::Write;
+use std::io::{self, Write};
+use std::{thread, time};
 
 pub struct Game {
     board: Board,
@@ -55,11 +56,11 @@ impl Game {
             self.print_board();
             println!("Type \'quit\' to quit the game.");
             print!("What are your directions?: ");
-            std::io::stdout().flush().unwrap(); // necessary for print! for whatever reason
+            io::stdout().flush().unwrap(); // necessary for print! for whatever reason
 
             // user input for where they want to go
             let mut direction = String::new();
-            match std::io::stdin().read_line(&mut direction) {
+            match io::stdin().read_line(&mut direction) {
                 Ok(_) => (),
                 Err(_) => panic!("Unable to receive user input."),
             };
@@ -72,7 +73,7 @@ impl Game {
             if directions == "quit" {
                 println!();
                 println!("Quitting...");
-                break;
+                std::process::exit(0);
             }
 
             let mut error = false;
@@ -117,6 +118,23 @@ impl Game {
             if self.level_completed {
                 self.level_complete();
                 self.level_completed = false;
+
+                // * Increase the score
+                // TODO: Find a way to dynamically calculate the score
+                let mut score_buffer = 500;
+                while score_buffer != 0 {
+                    self.player.score += 1;
+                    score_buffer -= 1;
+                    
+                    print!("\r~~ Score: {:05} ~~", self.player.score);
+                    io::stdout().flush().unwrap();
+        
+                    thread::sleep(time::Duration::from_secs_f32(0.000000001));
+                }
+                print!("\n");
+                std::io::stdout().flush().unwrap();
+
+                thread::sleep(time::Duration::from_secs_f32(0.25));
             } else {
                 println!();
                 println!("You didn't complete the level this time! Try again.");
@@ -127,6 +145,12 @@ impl Game {
             }
 
         }
+
+        let mut buffer = String::new();
+        println!();
+        print!("Press enter to quit: ");
+        io::stdout().flush().unwrap();
+        io::stdin().read_line(&mut buffer).expect("Failed to read line");
     }
 
     fn move_object(&mut self, obj: CellType, dir: Direction) -> bool {
@@ -255,7 +279,7 @@ impl Game {
         if !self.finished {
             println!("Advancing to level {}.", self.level);
             println!();
-            println!("~~ Level {} ~~", self.level);
+            println!("~~   Level: {}   ~~", self.level);
         }
     }
 
@@ -275,18 +299,20 @@ impl Game {
         println!("~~ Board ~~");
         println!();
 
-        println!("+{}+", "-".repeat(self.board.cells[0].len()));
-        for vec in &self.board.cells {
-            let mut tmp = String::new();
-            tmp.push('|');
-            for cell in vec {
-                tmp.push(cell.cell_type.display_char());
-            }
-            tmp.push('|');
+        // println!("+{}+", "-".repeat(self.board.cells[0].len()));
+        // for vec in &self.board.cells {
+        //     let mut tmp = String::new();
+        //     tmp.push('|');
+        //     for cell in vec {
+        //         tmp.push(cell.cell_type.display_char());
+        //     }
+        //     tmp.push('|');
 
-            println!("{}", tmp);
-        }
-        println!("+{}+", "-".repeat(self.board.cells.last().unwrap().len()));
+        //     println!("{}", tmp);
+        // }
+        // println!("+{}+", "-".repeat(self.board.cells.last().unwrap().len()));
+
+        println!("{}", self.board.level_str);
 
         println!();
 
