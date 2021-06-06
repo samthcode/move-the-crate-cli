@@ -40,8 +40,7 @@ impl Game {
     }
 
     pub fn play(&mut self) {
-        let mut clear_command = Command::new("clear");
-
+        // let mut clear_command = Command::new("clear"); // ! Commented due to below problem
 
         // The beginning
         println!("Welcome to move the crate, an awsome puzzle game.");
@@ -147,7 +146,7 @@ impl Game {
                 self.populate_board();
             }
 
-            // * Clear the console
+            // ! Clear the console - this seems to break when using the colored crate for coloured output
             // clear_command.status().expect("Failed to call clear command");
         }
 
@@ -323,7 +322,11 @@ impl Game {
 
         for vec in &self.board.cells {
             for cell in vec {
-                print!("{}", cell.cell_type.display_char());
+                if cfg!(unix) { // * If it's unix, we can use ANSI escape characters for coloured output
+                    print!("{}", cell.cell_type.display_char());
+                } else { // * If it's not, i.e. windows, sadly, we just use the uncoloured character
+                    print!("{}", cell.cell_type.char());
+                }
                 std::io::stdout().flush().unwrap();
             }
             println!();
