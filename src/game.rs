@@ -1,13 +1,13 @@
-use std::io::{self, Write};
-use std::{thread, time, process::Command};
 use colored::*;
+use std::io::{self, Write};
+use std::{process::Command, thread, time};
 
 pub struct Game {
     board: Board,
     level: usize,
     player: Player,
     finished: bool,
-    level_completed: bool
+    level_completed: bool,
 }
 
 impl Game {
@@ -25,7 +25,7 @@ impl Game {
                 score: 0,
             },
             finished: false,
-            level_completed: false
+            level_completed: false,
         };
 
         // Addition setup
@@ -43,7 +43,7 @@ impl Game {
         // let mut clear_command = Command::new("clear"); // ! Commented due to below problem
 
         // The beginning
-        println!("Welcome to move the crate, an awsome puzzle game.");
+        println!("Welcome to move the crate, an awesome puzzle game.");
         println!();
         println!("Your objective is to move the crate so that it is over the goal!");
         println!("You should input your directions in a row, and then see if you win!");
@@ -82,7 +82,7 @@ impl Game {
 
             for direction in directions.chars() {
                 let mut dir: Option<Direction> = None;
-    
+
                 match direction {
                     _ if direction == Direction::North.char() => {
                         dir = Some(Direction::North);
@@ -102,7 +102,7 @@ impl Game {
                         error = true;
                     }
                 }
-                
+
                 if !error {
                     self.move_object(
                         CellType::Player,
@@ -114,7 +114,7 @@ impl Game {
                     );
                 }
             }
-            
+
             self.update_level_string();
 
             if self.level_completed {
@@ -127,10 +127,10 @@ impl Game {
                 while score_buffer != 0 {
                     self.player.score += 1;
                     score_buffer -= 1;
-                    
+
                     print!("\r~~ Score: {:05} ~~", self.player.score);
                     io::stdout().flush().unwrap();
-        
+
                     thread::sleep(time::Duration::from_secs_f32(0.000000001));
                 }
                 print!("\n");
@@ -154,91 +154,69 @@ impl Game {
         println!();
         print!("Press enter to quit: ");
         io::stdout().flush().unwrap();
-        io::stdin().read_line(&mut buffer).expect("Failed to read line");
+        io::stdin()
+            .read_line(&mut buffer)
+            .expect("Failed to read line");
     }
 
     fn move_object(&mut self, obj: CellType, dir: Direction) -> bool {
         let obj_pos = match &obj {
             &CellType::Player => self.player.pos,
             &CellType::Crate => self.board.crate_pos,
-            _ => panic!("Attempt to call move_object() with invalid type") // format with obj when Debug implemented for CellType
+            _ => panic!("Attempt to call move_object() with invalid type"), // format with obj when Debug implemented for CellType
         };
 
         let destination: Pos = match dir {
-            Direction::North => { 
+            Direction::North => {
                 if obj_pos.y == 0 {
-                    Pos::from(
-                        obj_pos.x,
-                        self.board.cells.len()-1,
-                    )
+                    Pos::from(obj_pos.x, self.board.cells.len() - 1)
                 } else {
-                    Pos::from(
-                        obj_pos.x,
-                        obj_pos.y-1
-                    )
+                    Pos::from(obj_pos.x, obj_pos.y - 1)
                 }
-            },
+            }
             Direction::South => {
-                if obj_pos.y == self.board.cells.len()-1 {
-                    Pos::from(
-                        obj_pos.x,
-                        0
-                    )
+                if obj_pos.y == self.board.cells.len() - 1 {
+                    Pos::from(obj_pos.x, 0)
                 } else {
-                    Pos::from(
-                        obj_pos.x,
-                        obj_pos.y+1
-                    )
+                    Pos::from(obj_pos.x, obj_pos.y + 1)
                 }
-            },
+            }
             Direction::East => {
-                if obj_pos.x == self.board.cells[obj_pos.y].len()-1 {
-                    Pos::from(
-                        0,
-                        obj_pos.y
-                    )
+                if obj_pos.x == self.board.cells[obj_pos.y].len() - 1 {
+                    Pos::from(0, obj_pos.y)
                 } else {
-                    Pos::from(
-                        obj_pos.x+1,
-                        obj_pos.y
-                    )
+                    Pos::from(obj_pos.x + 1, obj_pos.y)
                 }
             }
             Direction::West => {
                 if obj_pos.x == 0 {
-                    Pos::from(
-                        self.board.cells[obj_pos.y].len()-1,
-                        obj_pos.y
-                    )
+                    Pos::from(self.board.cells[obj_pos.y].len() - 1, obj_pos.y)
                 } else {
-                    Pos::from(
-                        obj_pos.x-1,
-                        obj_pos.y
-                    )
+                    Pos::from(obj_pos.x - 1, obj_pos.y)
                 }
             }
         };
-        
-        // if the destination is a crate, try and move it; if its a goal or floor, go on it, and if it’s a wall, dont move
+
+        // if the destination is a crate, try and move it; if its a goal or floor, go on it, and if it’s a wall, don't move
         // self.update_pos_of(&obj, &destination);
         let can_move = match self.cell_at_pos(&destination).cell_type {
             CellType::Crate => {
                 let res = self.move_object(CellType::Crate, dir);
                 if self.level_completed {
-                    return true // the return value doesn't matter here
+                    return true; // the return value doesn't matter here
                 }
                 res
-            },
+            }
             CellType::Wall => false,
             CellType::Goal => {
                 //* Win condition here
                 if &obj == &CellType::Crate {
                     self.level_completed = true;
-                    return true
+                    return true;
                 }
                 true
             }
-            _ => true
+            _ => true,
         };
 
         if can_move {
@@ -252,7 +230,6 @@ impl Game {
             self.update_object_pos(&obj, &destination);
         }
 
-
         can_move
     }
 
@@ -260,7 +237,7 @@ impl Game {
         match obj {
             CellType::Player => self.player.pos = *new,
             CellType::Crate => self.board.crate_pos = *new,
-            _ => panic!("Attempt to call update_object_pos() on unsupported CellType")
+            _ => panic!("Attempt to call update_object_pos() on unsupported CellType"),
         }
     }
 
@@ -322,9 +299,11 @@ impl Game {
 
         for vec in &self.board.cells {
             for cell in vec {
-                if cfg!(unix) { // * If it's unix, we can use ANSI escape characters for coloured output
+                if cfg!(unix) {
+                    // * If it's unix, we can use ANSI escape characters for coloured output
                     print!("{}", cell.cell_type.display_char());
-                } else { // * If it's not, i.e. windows, sadly, we just use the uncoloured character
+                } else {
+                    // * If it's not, i.e. windows, sadly, we just use the uncoloured character
                     print!("{}", cell.cell_type.char());
                 }
                 std::io::stdout().flush().unwrap();
@@ -369,10 +348,7 @@ impl Game {
                         self.board.crate_pos = Pos::from(col_ind, row_ind);
                     }
                     _ => {
-                        panic!(
-                            "Unsupported character \'{}\' in level {}.",
-                            col, self.level
-                        )
+                        panic!("Unsupported character \'{}\' in level {}.", col, self.level)
                     }
                 }
             }
@@ -441,7 +417,8 @@ impl CellType {
         }
     }
 
-    fn display_char(&self) -> ColoredString { // TODO: Find some unicode characters to use for these
+    fn display_char(&self) -> ColoredString {
+        // TODO: Find some unicode characters to use for these
         match self {
             &CellType::Wall => "#".bold().black(),
             &CellType::Floor => " ".bold(),
