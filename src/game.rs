@@ -1,6 +1,10 @@
 use colored::*;
-use std::io::{self, Write};
-use std::{process::Command, thread, time};
+use std::{
+    io::{self, Write},
+    process::Command,
+    thread,
+    time::Duration,
+};
 
 use crate::utilities;
 
@@ -143,12 +147,12 @@ impl Game {
                     print!("\r~~ Score: {:05} ~~", self.player.score);
                     io::stdout().flush().unwrap();
 
-                    thread::sleep(time::Duration::from_secs_f32(0.0000001));
+                    thread::sleep(Duration::from_secs_f32(0.0000001));
                 }
                 print!("\n");
                 std::io::stdout().flush().unwrap();
 
-                thread::sleep(time::Duration::from_secs_f32(0.25));
+                thread::sleep(Duration::from_secs_f32(0.25));
             } else {
                 println!();
                 println!("You didn't complete the level this time! This is where you got to: ");
