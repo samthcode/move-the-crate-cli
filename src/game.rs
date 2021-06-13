@@ -43,10 +43,7 @@ impl Game {
         // let mut clear_command = Command::new("clear"); // ! Commented due to below problem
 
         // The beginning
-        println!("Welcome to move the crate, an awesome puzzle game.");
-        println!();
-        println!("Your objective is to move the crate so that it is over the goal!");
-        println!("You should input your directions in a row, and then see if you win!");
+        self.introduction();
 
         loop {
             if self.finished {
@@ -157,6 +154,18 @@ impl Game {
         io::stdin()
             .read_line(&mut buffer)
             .expect("Failed to read line");
+    }
+
+    fn introduction(&self) {
+        println!("Welcome to move the crate, an awesome puzzle game.");
+        println!();
+        println!("Your objective is to move the crate so that it is over the goal!");
+        println!("Input your directions in a row and then press enter.");
+        println!("- If you win, you will advance to the next level");
+        println!("- If you don't, you can try again");
+        println!("- You have as much time as you need");
+        println!();
+        println!("Good luck!");
     }
 
     fn move_object(&mut self, obj: CellType, dir: Direction) -> bool {
