@@ -1,12 +1,13 @@
+use crate::utilities;
 use colored::*;
 use std::{
-    io::{self, Write},
-    process::Command,
+    cmp::{max, min, Ordering},
+    fs::{self, File},
+    io::{self, BufRead, BufReader, Write},
+    process::{self, Command},
     thread,
     time::Duration,
 };
-
-use crate::utilities;
 
 pub struct Game {
     board: Board,
@@ -14,6 +15,7 @@ pub struct Game {
     player: Player,
     finished: bool,
     level_completed: bool,
+    bests_file_path: String,
 }
 
 impl Game {
@@ -32,6 +34,7 @@ impl Game {
             },
             finished: false,
             level_completed: false,
+            bests_file_path: "levels/bests.txt".to_string(),
         };
 
         // Addition setup
@@ -46,7 +49,8 @@ impl Game {
     }
 
     pub fn play(&mut self) {
-        // let mut clear_command = Command::new("clear"); // ! Commented due to below problem
+        // FIXME: This causes wierd behaviour when printing unicode values :/ - as far as I know at least
+        // let mut clear_command = Command::new("clear");
 
         // The beginning
         self.introduction();
@@ -68,7 +72,7 @@ impl Game {
             if directions == "quit" {
                 println!();
                 println!("Quitting...");
-                std::process::exit(0);
+                process::exit(0);
             }
 
             let mut error = false;
@@ -117,9 +121,35 @@ impl Game {
                 self.level_complete();
                 self.level_completed = false;
 
-                // TODO: Find a way to dynamically calculate the score
+                let maximum_score: i32 = 500;
+                let score_penalty_per_char_over = 25;
+                let mut score_buffer = maximum_score;
 
-                let mut score_buffer = 500;
+                // This gets the length of the best known combination of directions to get to the goal
+                let best_len = fs::read_to_string(&self.bests_file_path)
+                    .expect("A bests string doesn't exist for your current level.")
+                    .lines()
+                    .nth(self.level - 2)
+                    .unwrap()
+                    .len();
+                // println!("Best len: {}", best_len);
+
+                match (directions.len() as usize).cmp(&best_len) {
+                    Ordering::Equal => (),
+                    Ordering::Greater => for _ in 0..directions.len()-best_len {
+                        score_buffer -= score_penalty_per_char_over;
+                    },
+                    Ordering::Less => println!("Your directions are less than those which I thought to be the most optimised! Well done!")
+                };
+
+                // If the score buffer is below or equal to 0, we print the score, wait, and continue with the game
+                if score_buffer <= 0 {
+                    println!("~~ Score: {:05} ~~", self.player.score);
+
+                    thread::sleep(Duration::from_secs_f32(0.25));
+
+                    continue;
+                }
 
                 // The score_step is calculated using a factors function
                 // and makes sure that the score is added to the correct number of times
@@ -164,7 +194,6 @@ impl Game {
                 self.populate_board();
             }
 
-            // ! Clear the console - this seems to break when using the colored crate for coloured output
             // clear_command.status().expect("Failed to call clear command");
         }
 
@@ -255,7 +284,7 @@ impl Game {
             }
             CellType::Wall => false,
             CellType::Goal => {
-                //* Win condition here
+                // * Win condition here
                 if &obj == &CellType::Crate {
                     self.level_completed = true;
                     return true;
