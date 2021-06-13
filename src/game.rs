@@ -2,6 +2,8 @@ use colored::*;
 use std::io::{self, Write};
 use std::{process::Command, thread, time};
 
+use crate::utilities;
+
 pub struct Game {
     board: Board,
     level: usize,
@@ -113,17 +115,29 @@ impl Game {
 
                 // TODO: Find a way to dynamically calculate the score
 
-                // * The score_step should be a factor of the score_buffer
                 let mut score_buffer = 500;
-                let score_step = 2;
+                
+                // * The score_step is calculated using a factors function
+                // * and makes sure that the score is added to the correct number of times
+                let factors = utilities::factor(score_buffer);
+                
+                // * We use this if statement to make the score adding a bit more dynamic
+                let score_step = if factors.len() == 1 {
+                    factors[0]
+                } else if factors.len() == 2 {
+                    factors[1]
+                } else {
+                    factors[2]
+                };
+
                 while score_buffer > 0 {
-                    self.player.score += score_step;
+                    self.player.score += score_step as isize;
                     score_buffer -= score_step;
 
                     print!("\r~~ Score: {:05} ~~", self.player.score);
                     io::stdout().flush().unwrap();
 
-                    thread::sleep(time::Duration::from_secs_f32(0.000000001));
+                    thread::sleep(time::Duration::from_secs_f32(0.0000001));
                 }
                 print!("\n");
                 std::io::stdout().flush().unwrap();
