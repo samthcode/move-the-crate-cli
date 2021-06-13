@@ -53,7 +53,7 @@ impl Game {
             }
 
             self.print_board();
-            
+
             let directions = self.prompt_directions();
 
             // println!("direction: \'{}\'", direction);
@@ -105,15 +105,20 @@ impl Game {
             self.update_level_string();
 
             if self.level_completed {
+                // * Here we add the score_buffer to the player's score
+                // * This is animated for fanciness
+
                 self.level_complete();
                 self.level_completed = false;
 
-                // * Increase the score
                 // TODO: Find a way to dynamically calculate the score
+
+                // * The score_step should be a factor of the score_buffer
                 let mut score_buffer = 500;
-                while score_buffer != 0 {
-                    self.player.score += 1;
-                    score_buffer -= 1;
+                let score_step = 2;
+                while score_buffer > 0 {
+                    self.player.score += score_step;
+                    score_buffer -= score_step;
 
                     print!("\r~~ Score: {:05} ~~", self.player.score);
                     io::stdout().flush().unwrap();
@@ -148,18 +153,18 @@ impl Game {
 
     fn prompt_directions(&self) -> String {
         println!("Type \'quit\' to quit the game.");
-            print!("What are your directions?: ");
-            io::stdout().flush().unwrap(); // necessary for print! for whatever reason
+        print!("What are your directions?: ");
+        io::stdout().flush().unwrap(); // necessary for print! for whatever reason
 
-            // user input for where they want to go
-            let mut directions = String::new();
-            match io::stdin().read_line(&mut directions) {
-                Ok(_) => (),
-                Err(_) => panic!("Unable to receive user input."),
-            };
+        // user input for where they want to go
+        let mut directions = String::new();
+        match io::stdin().read_line(&mut directions) {
+            Ok(_) => (),
+            Err(_) => panic!("Unable to receive user input."),
+        };
 
-            let directions = directions.trim().to_string();
-            directions
+        let directions = directions.trim().to_string();
+        directions
     }
 
     fn introduction(&self) {
