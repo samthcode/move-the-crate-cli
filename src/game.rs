@@ -107,8 +107,8 @@ impl Game {
             self.update_level_string();
 
             if self.level_completed {
-                // * Here we add the score_buffer to the player's score
-                // * This is animated for fanciness
+                // Here we add the score_buffer to the player's score
+                // This is animated for fanciness
 
                 self.level_complete();
                 self.level_completed = false;
@@ -117,11 +117,11 @@ impl Game {
 
                 let mut score_buffer = 500;
 
-                // * The score_step is calculated using a factors function
-                // * and makes sure that the score is added to the correct number of times
+                // The score_step is calculated using a factors function
+                // and makes sure that the score is added to the correct number of times
                 let factors = utilities::factor(score_buffer);
 
-                // * We use this if statement to make the score adding a bit more dynamic
+                // We use this if statement to make the score adding a bit more dynamic
                 let score_step = if score_buffer >= 200 {
                     if factors.len() <= 3 {
                         1
@@ -151,7 +151,9 @@ impl Game {
                 thread::sleep(time::Duration::from_secs_f32(0.25));
             } else {
                 println!();
-                println!("You didn't complete the level this time! Try again.");
+                println!("You didn't complete the level this time! This is where you got to: ");
+                self.print_board();
+                println!("Try again!");
 
                 self.level -= 1;
                 self.advance_level_string();
@@ -340,10 +342,10 @@ impl Game {
         for vec in &self.board.cells {
             for cell in vec {
                 if cfg!(unix) {
-                    // * If it's unix, we can use ANSI escape characters for coloured output
+                    // If it's unix, we can use ANSI escape characters for coloured output
                     print!("{}", cell.cell_type.display_char());
                 } else {
-                    // * If it's not, i.e. windows, sadly, we just use the uncoloured character
+                    // If it's not, i.e. windows, sadly, we just use the uncoloured character
                     print!("{}", cell.cell_type.char());
                 }
                 std::io::stdout().flush().unwrap();
