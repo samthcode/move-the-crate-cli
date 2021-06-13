@@ -53,18 +53,8 @@ impl Game {
             }
 
             self.print_board();
-            println!("Type \'quit\' to quit the game.");
-            print!("What are your directions?: ");
-            io::stdout().flush().unwrap(); // necessary for print! for whatever reason
-
-            // user input for where they want to go
-            let mut direction = String::new();
-            match io::stdin().read_line(&mut direction) {
-                Ok(_) => (),
-                Err(_) => panic!("Unable to receive user input."),
-            };
-
-            let directions = direction.trim();
+            
+            let directions = self.prompt_directions();
 
             // println!("direction: \'{}\'", direction);
 
@@ -154,6 +144,22 @@ impl Game {
         io::stdin()
             .read_line(&mut buffer)
             .expect("Failed to read line");
+    }
+
+    fn prompt_directions(&self) -> String {
+        println!("Type \'quit\' to quit the game.");
+            print!("What are your directions?: ");
+            io::stdout().flush().unwrap(); // necessary for print! for whatever reason
+
+            // user input for where they want to go
+            let mut directions = String::new();
+            match io::stdin().read_line(&mut directions) {
+                Ok(_) => (),
+                Err(_) => panic!("Unable to receive user input."),
+            };
+
+            let directions = directions.trim().to_string();
+            directions
     }
 
     fn introduction(&self) {
