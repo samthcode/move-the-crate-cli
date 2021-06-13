@@ -127,10 +127,10 @@ impl Game {
 
                 // This gets the length of the best known combination of directions to get to the goal
                 let best_len = fs::read_to_string(&self.bests_file_path)
-                    .expect("A bests string doesn't exist for your current level.")
+                    .expect("Failed to read levels/bests.txt file.")
                     .lines()
                     .nth(self.level - 2)
-                    .unwrap()
+                    .expect("A levels/bests.txt entry doesn't exist for this level. Please tell me about this issue.")
                     .len();
                 // println!("Best len: {}", best_len);
 
