@@ -116,18 +116,24 @@ impl Game {
                 // TODO: Find a way to dynamically calculate the score
 
                 let mut score_buffer = 500;
-                
+
                 // * The score_step is calculated using a factors function
                 // * and makes sure that the score is added to the correct number of times
                 let factors = utilities::factor(score_buffer);
-                
+
                 // * We use this if statement to make the score adding a bit more dynamic
-                let score_step = if factors.len() == 1 {
-                    factors[0]
-                } else if factors.len() == 2 {
-                    factors[1]
+                let score_step = if score_buffer >= 200 {
+                    if factors.len() <= 3 {
+                        1
+                    } else {
+                        if score_buffer >= 500 {
+                            factors[2]
+                        } else {
+                            factors[1]
+                        }
+                    }
                 } else {
-                    factors[2]
+                    1
                 };
 
                 while score_buffer > 0 {
