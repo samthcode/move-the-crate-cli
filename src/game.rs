@@ -49,6 +49,9 @@ impl Game {
     }
 
     pub fn play(&mut self) {
+        let maximum_score: i32 = 500;
+        let score_penalty_per_char_over = 25;
+
         // FIXME: This causes wierd behaviour when printing unicode values :/ - as far as I know at least
         // let mut clear_command = Command::new("clear");
 
@@ -58,7 +61,9 @@ impl Game {
         loop {
             if self.finished {
                 println!();
-                println!("Congratulations! You've won!");
+                println!("Congratulations, you've won!");
+                println!("You acheived a score of {:05}!", self.player.score);
+
                 break;
             }
 
@@ -121,8 +126,6 @@ impl Game {
                 self.level_complete();
                 self.level_completed = false;
 
-                let maximum_score: i32 = 500;
-                let score_penalty_per_char_over = 25;
                 let mut score_buffer = maximum_score;
 
                 // This gets the length of the best known combination of directions to get to the goal
@@ -171,7 +174,7 @@ impl Game {
                 };
 
                 while score_buffer > 0 {
-                    self.player.score += score_step as isize;
+                    self.player.score += score_step as usize;
                     score_buffer -= score_step;
 
                     print!("\r~~ Score: {:05} ~~", self.player.score);
@@ -434,7 +437,7 @@ impl Game {
 
 pub struct Player {
     pos: Pos,
-    score: isize,
+    score: usize,
 }
 
 pub struct Board {
