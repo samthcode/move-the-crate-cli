@@ -1,11 +1,10 @@
 use crate::utilities;
 use colored::*;
 use std::{
-    cmp::{max, min, Ordering},
-    fs::{self, File},
-    io::{self, BufRead, BufReader, Write},
-    process::{self, Command},
-    thread,
+    cmp::Ordering,
+    fs,
+    io::{self, Write},
+    process, thread,
     time::Duration,
 };
 
@@ -52,8 +51,7 @@ impl Game {
         let maximum_score: i32 = 500;
         let score_penalty_per_char_over = 25;
 
-        // FIXME: This causes wierd behaviour when printing unicode values :/ - as far as I know at least
-        // let mut clear_command = Command::new("clear");
+        clearscreen::clear().unwrap();
 
         // The beginning
         self.introduction();
@@ -197,7 +195,7 @@ impl Game {
                 self.populate_board();
             }
 
-            // clear_command.status().expect("Failed to call clear command");
+            clearscreen::clear().unwrap();
         }
 
         let mut buffer = String::new();
