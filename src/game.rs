@@ -375,13 +375,7 @@ impl Game {
 
         for vec in &self.board.cells {
             for cell in vec {
-                if cfg!(unix) {
-                    // If it's unix, we can use ANSI escape characters for coloured output
-                    print!("{}", cell.cell_type.display_char());
-                } else {
-                    // If it's not, i.e. windows, sadly, we just use the uncoloured character
-                    print!("{}", cell.cell_type.char());
-                }
+                print!("{}", cell.cell_type.display_char());
                 std::io::stdout().flush().unwrap();
             }
             println!();
